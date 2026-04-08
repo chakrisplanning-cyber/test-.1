@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดเก็บแผนงานก่อสร้าง และปรับปรุงระบบจำหน่ายแรงสูง 22 kV</title>
+    <title>แผนงานก่อสร้างและปรับปรุงระบบจำหน่ายแรงสูง 22 kV ตามโครงการต่างๆ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -90,6 +90,38 @@
             height: 300px;
             width: 100%;
         }
+
+        .toggle-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toggle-btn.active {
+            background-color: var(--pea-purple);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(106, 44, 145, 0.4);
+        }
+
+        /* Budget Switch Styling */
+        .budget-switch {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+        .budget-option {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        .budget-option.active {
+            background: white;
+            color: var(--pea-purple);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body class="text-slate-700">
@@ -101,9 +133,7 @@
                     <img src="https://www.pea.co.th/Portals/0/logo_pea.png" alt="PEA Logo" class="h-9" onerror="this.src='https://placehold.co/120x40?text=PEA'">
                 </div>
                 <div>
-                    <!-- ชื่อโครงการที่ปรับใหม่ตามคำขอ -->
-                    <h1 class="font-bold text-lg md:text-xl tracking-tight leading-tight">ระบบจัดเก็บแผนงานก่อสร้าง และปรับปรุงระบบจำหน่ายแรงสูง 22 kV</h1>
-                    <p class="text-[10px] opacity-80 text-yellow-300 font-medium uppercase tracking-widest">ตามโครงการต่างๆ - กองบริหารโครงการและข้อมูลภูมิสารสนเทศ</p>
+                    <h1 class="font-bold text-lg md:text-xl tracking-tight leading-tight">แผนงานก่อสร้างและปรับปรุงระบบจำหน่ายแรงสูง 22 kV ตามโครงการต่างๆ</h1>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -117,33 +147,55 @@
     <main class="container mx-auto px-4 py-8">
         <div id="status-bar" class="hidden mb-6 p-4 rounded-xl border text-sm shadow-sm transition-all duration-300"></div>
 
+        <!-- Filter Toggle for Budget Types -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                <i class="fas fa-chart-line mr-2 text-purple-600"></i> สรุปข้อมูลภาพรวม
+            </h2>
+            <div class="budget-switch border border-slate-200 shadow-sm">
+                <div onclick="filterBudget('all')" id="opt-all" class="budget-option active">ทั้งหมด</div>
+                <div onclick="filterBudget('kpo1')" id="opt-kpo1" class="budget-option">เฉพาะ คปอ.1</div>
+                <div onclick="filterBudget('other')" id="opt-other" class="budget-option">งบอื่นๆ</div>
+            </div>
+        </div>
+
         <!-- Stats Overview Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="card p-6 border-l-8 border-indigo-500 flex items-center">
                 <div class="p-4 bg-indigo-50 rounded-2xl text-indigo-600 mr-5 shadow-inner"><i class="fas fa-clipboard-list text-2xl"></i></div>
-                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">งานทั้งหมด</p><h3 class="text-3xl font-black text-slate-800" id="total-tasks">0</h3></div>
-            </div>
-            <div class="card p-6 border-l-8 border-amber-500 flex items-center">
-                <div class="p-4 bg-amber-50 rounded-2xl text-amber-600 mr-5 shadow-inner"><i class="fas fa-hourglass-half text-2xl"></i></div>
-                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">รอดำเนินการ</p><h3 class="text-3xl font-black text-slate-800" id="pending-tasks">0</h3></div>
+                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">งานในตัวเลือก</p><h3 class="text-3xl font-black text-slate-800" id="total-tasks">0</h3></div>
             </div>
             <div class="card p-6 border-l-8 border-emerald-500 flex items-center">
-                <div class="p-4 bg-emerald-50 rounded-2xl text-emerald-600 mr-5 shadow-inner"><i class="fas fa-check-double text-2xl"></i></div>
-                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">เสร็จสิ้น</p><h3 class="text-3xl font-black text-slate-800" id="completed-tasks">0</h3></div>
+                <div class="p-4 bg-emerald-50 rounded-2xl text-emerald-600 mr-5 shadow-inner"><i class="fas fa-file-invoice-dollar text-2xl"></i></div>
+                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">งบ คปอ.1 (สะสม)</p><h3 class="text-3xl font-black text-slate-800" id="kpo1-tasks">0</h3></div>
+            </div>
+            <div class="card p-6 border-l-8 border-amber-500 flex items-center">
+                <div class="p-4 bg-amber-50 rounded-2xl text-amber-600 mr-5 shadow-inner"><i class="fas fa-bolt text-2xl"></i></div>
+                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">วงจร-กม. รวม</p><h3 class="text-3xl font-black text-slate-800" id="total-circuit-km">0</h3></div>
             </div>
             <div class="card p-6 border-l-8 border-purple-500 flex items-center">
-                <div class="p-4 bg-purple-50 rounded-2xl text-purple-600 mr-5 shadow-inner"><i class="fas fa-map-marker-alt text-2xl"></i></div>
-                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">จำนวน กฟฟ.</p><h3 class="text-3xl font-black text-slate-800" id="total-depts">0</h3></div>
+                <div class="p-4 bg-purple-50 rounded-2xl text-purple-600 mr-5 shadow-inner"><i class="fas fa-building text-2xl"></i></div>
+                <div><p class="text-xs font-bold text-slate-400 uppercase mb-1">กฟฟ. ที่เกี่ยวข้อง</p><h3 class="text-3xl font-black text-slate-800" id="total-depts">0</h3></div>
             </div>
         </div>
 
         <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-            <div class="card p-6">
-                <h4 class="font-bold text-slate-800 mb-6 flex items-center">
-                    <span class="w-2 h-6 bg-purple-600 rounded-full mr-3"></span>
-                    สัดส่วนลักษณะงาน
-                </h4>
+            <div class="card p-6 relative">
+                <div class="flex justify-between items-start mb-6">
+                    <h4 class="font-bold text-slate-800 flex items-center">
+                        <span class="w-2 h-6 bg-purple-600 rounded-full mr-3"></span>
+                        <span id="pie-chart-title">สัดส่วนลักษณะงาน</span>
+                    </h4>
+                    <div class="flex flex-col gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                        <button onclick="changePieData('type')" id="btn-type" class="toggle-btn active p-2 rounded-lg text-[10px] font-bold uppercase tracking-tight flex items-center gap-2">
+                            <i class="fas fa-tags"></i> ลักษณะงาน
+                        </button>
+                        <button onclick="changePieData('plan')" id="btn-plan" class="toggle-btn p-2 rounded-lg text-[10px] font-bold uppercase tracking-tight flex items-center gap-2">
+                            <i class="fas fa-wallet"></i> ประเภทงบ
+                        </button>
+                    </div>
+                </div>
                 <div class="chart-container">
                     <canvas id="statusChart"></canvas>
                 </div>
@@ -160,9 +212,18 @@
         </div>
 
         <!-- Table Filters -->
-        <div class="bg-white p-6 rounded-t-3xl border-b flex flex-col md:flex-row gap-6 items-end shadow-sm">
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">กรองหน่วยงาน</label>
+        <div class="bg-white p-6 rounded-t-3xl border-b flex flex-wrap gap-4 items-end shadow-sm">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ประเภทแผนงาน</label>
+                <div class="relative">
+                    <select id="planFilter" class="w-full appearance-none px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none transition-all cursor-pointer">
+                        <option value="all">ทุกแผนงาน</option>
+                    </select>
+                    <i class="fas fa-filter absolute right-4 top-4 text-slate-400 pointer-events-none text-xs"></i>
+                </div>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">กฟฟ.</label>
                 <div class="relative">
                     <select id="deptFilter" class="w-full appearance-none px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none transition-all cursor-pointer">
                         <option value="all">แสดงทั้งหมด</option>
@@ -170,7 +231,7 @@
                     <i class="fas fa-chevron-down absolute right-4 top-4 text-slate-400 pointer-events-none text-xs"></i>
                 </div>
             </div>
-            <div class="w-full md:w-2/3 relative">
+            <div class="w-full lg:w-1/2 relative">
                 <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ค้นหาข้อมูล</label>
                 <div class="relative">
                     <input type="text" id="tableSearch" placeholder="พิมพ์ชื่อโครงการ หรือข้อมูลที่ต้องการค้นหา..." class="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-purple-500 focus:bg-white outline-none transition-all shadow-inner">
@@ -186,12 +247,12 @@
                     <thead>
                         <tr class="bg-slate-50 text-[11px] text-slate-500 uppercase font-bold tracking-wider border-b">
                             <th class="p-5">#</th>
-                            <th class="p-5">รหัส กฟฟ.</th>
-                            <th class="p-5">หน่วยงาน</th>
+                            <th class="p-5">แผนงาน</th>
+                            <th class="p-5">กฟฟ.</th>
                             <th class="p-5">ชื่อโครงการ / งาน</th>
                             <th class="p-5 bg-purple-100 text-purple-700 text-center font-black">วงจร-กม.</th>
-                            <th class="p-5 text-center">สถานะ / ลักษณะงาน</th>
-                            <th class="p-5 text-right">แอ็กชัน</th>
+                            <th class="p-5 text-center">ลักษณะงาน</th>
+                            <th class="p-5 text-center">รายละเอียด</th>
                         </tr>
                     </thead>
                     <tbody id="table-body" class="text-sm divide-y divide-slate-100">
@@ -203,7 +264,7 @@
                 <span id="showing-text">พบข้อมูล 0 รายการ</span>
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span class="font-bold text-slate-600">PEA SMART DASHBOARD v3.1</span>
+                    <span class="font-bold text-slate-600">PEA SMART DASHBOARD v5.8</span>
                 </div>
             </div>
         </div>
@@ -217,7 +278,7 @@
                     <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-md"><i class="fas fa-database"></i></div>
                     <div>
                         <h3 class="font-bold text-lg">รายละเอียดข้อมูล</h3>
-                        <p class="text-[10px] text-white/70">แผนงานก่อสร้าง และปรับปรุงระบบจำหน่าย (A-AD)</p>
+                        <p class="text-[10px] text-white/70">ข้อมูลแผนงานและงบประมาณอย่างละเอียด</p>
                     </div>
                 </div>
                 <button onclick="closeModal()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-all text-3xl font-light">&times;</button>
@@ -237,10 +298,13 @@
     <script>
         const SHEET_ID = '1Fg-cIm03_igZZzLODsZQa1UG6D1gElTV';
         const GID = '113675515';
+        const LIMIT_RANGE = 'A1:AA67';
         
         let allData = [];
         let headers = [];
         let myCharts = { status: null, dept: null };
+        let currentPieMode = 'type'; 
+        let currentBudgetFilter = 'all'; // 'all', 'kpo1', 'other'
 
         window.google = {
             visualization: {
@@ -257,9 +321,9 @@
         };
 
         function fetchData() {
-            showStatus('กำลังอัปเดตข้อมูลล่าสุด...', 'bg-indigo-100 text-indigo-700 border-indigo-200');
+            showStatus('กำลังอัปเดตข้อมูล...', 'bg-indigo-100 text-indigo-700 border-indigo-200');
             const script = document.createElement('script');
-            script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&t=${Date.now()}`;
+            script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&range=${LIMIT_RANGE}&t=${Date.now()}`;
             const oldScript = document.getElementById('viz-script');
             if (oldScript) oldScript.remove();
             script.id = 'viz-script';
@@ -275,16 +339,22 @@
                 let raw = {};
                 headers.forEach((h, idx) => {
                     const cell = cells[idx];
-                    raw[h] = cell ? (cell.v !== null ? cell.v : (cell.f || '-')) : '-';
+                    let val = cell ? (cell.v !== null ? cell.v : (cell.f || '-')) : '-';
+                    if (h.includes("งบประมาณ") && typeof val === 'number') {
+                        val = val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    }
+                    raw[h] = val;
                 });
+
+                const planName = cells[26] ? (cells[26].v || '-') : '-';
 
                 return {
                     id: i + 1,
-                    peaCode: cells[1] ? (cells[1].v || '-') : '-',
                     dept: cells[2] ? (cells[2].v || '-') : '-',
                     jobTitle: cells[3] ? (cells[3].v || '-') : '-',
-                    status: cells[5] ? (cells[5].v || '-') : '-',
-                    circuitKm: cells[7] ? (cells[7].v || '-') : '-',
+                    jobType: cells[5] ? (cells[5].v || '-') : '-', 
+                    plan: planName,
+                    circuitKm: cells[7] ? (cells[7].v || 0) : 0, 
                     fullData: raw
                 };
             });
@@ -292,36 +362,89 @@
             updateUI();
         }
 
-        function updateUI() {
-            const depts = [...new Set(allData.map(d => d.dept))].filter(d => d !== '-').sort();
-            document.getElementById('deptFilter').innerHTML = '<option value="all">แสดงทั้งหมด</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+        function filterBudget(type) {
+            currentBudgetFilter = type;
             
-            const completedCount = allData.filter(d => String(d.status).includes('เสร็จ')).length;
-            document.getElementById('total-tasks').innerText = allData.length;
-            document.getElementById('pending-tasks').innerText = allData.length - completedCount;
-            document.getElementById('completed-tasks').innerText = completedCount;
-            document.getElementById('total-depts').innerText = depts.length;
+            // UI Toggle
+            document.querySelectorAll('.budget-option').forEach(opt => opt.classList.remove('active'));
+            document.getElementById(`opt-${type}`).classList.add('active');
 
-            updateCharts();
-            applyFilters();
-            showStatus('ดึงข้อมูลเสร็จสมบูรณ์', 'bg-emerald-100 text-emerald-700 border-emerald-200');
+            updateUI();
         }
 
-        function updateCharts() {
-            const statusMap = allData.reduce((acc, curr) => {
-                acc[curr.status] = (acc[curr.status] || 0) + 1;
-                return acc;
-            }, {});
+        function getFilteredData() {
+            if (currentBudgetFilter === 'all') return allData;
+            if (currentBudgetFilter === 'kpo1') return allData.filter(d => d.plan.includes('คปอ.1'));
+            if (currentBudgetFilter === 'other') return allData.filter(d => !d.plan.includes('คปอ.1'));
+            return allData;
+        }
+
+        function updateUI() {
+            const filteredData = getFilteredData();
+            
+            // Update Plan Filter Select
+            const plans = [...new Set(filteredData.map(d => d.plan))].filter(p => p !== '-').sort();
+            document.getElementById('planFilter').innerHTML = '<option value="all">ทุกแผนงาน</option>' + plans.map(p => `<option value="${p}">${p}</option>`).join('');
+
+            // Update Dept Filter Select
+            const depts = [...new Set(filteredData.map(d => d.dept))].filter(d => d !== '-').sort();
+            document.getElementById('deptFilter').innerHTML = '<option value="all">แสดงทั้งหมด</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+            
+            // Calculate Stats for Filtered Data
+            const kpo1Total = allData.filter(d => d.plan.includes('คปอ.1')).length;
+            const uniqueDeptsCount = [...new Set(filteredData.map(d => d.dept))].filter(d => d !== '-').length;
+            const totalCircuitKm = filteredData.reduce((sum, curr) => {
+                const val = parseFloat(curr.circuitKm);
+                return sum + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            document.getElementById('total-tasks').innerText = filteredData.length;
+            document.getElementById('total-circuit-km').innerText = totalCircuitKm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('kpo1-tasks').innerText = kpo1Total; // สถิติสะสมคปอ.1
+            document.getElementById('total-depts').innerText = uniqueDeptsCount;
+
+            renderPieChart(filteredData);
+            updateBarChart(filteredData);
+            applyFilters();
+            showStatus('แสดงข้อมูลตามเงื่อนไขที่เลือก', 'bg-emerald-100 text-emerald-700 border-emerald-200');
+        }
+
+        function changePieData(mode) {
+            currentPieMode = mode;
+            document.getElementById('btn-type').classList.toggle('active', mode === 'type');
+            document.getElementById('btn-plan').classList.toggle('active', mode === 'plan');
+            document.getElementById('pie-chart-title').innerText = mode === 'type' ? 'สัดส่วนลักษณะงาน' : 'สัดส่วนประเภทงบประมาณ';
+            renderPieChart(getFilteredData());
+        }
+
+        function renderPieChart(data) {
+            let chartData = {};
+            let colors = [];
+            
+            if (currentPieMode === 'type') {
+                chartData = data.reduce((acc, curr) => {
+                    if(curr.jobType !== '-') acc[curr.jobType] = (acc[curr.jobType] || 0) + 1;
+                    return acc;
+                }, {});
+                colors = ['#6366f1', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#ec4899'];
+            } else {
+                chartData = data.reduce((acc, curr) => {
+                    const planType = curr.plan.includes('คปอ.1') ? 'งบ คปอ.1' : 'งบอื่นๆ/โครงการอื่น';
+                    acc[planType] = (acc[planType] || 0) + 1;
+                    return acc;
+                }, {});
+                colors = ['#10b981', '#fb7185'];
+            }
 
             const statusCtx = document.getElementById('statusChart').getContext('2d');
             if (myCharts.status) myCharts.status.destroy();
             myCharts.status = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(statusMap),
+                    labels: Object.keys(chartData),
                     datasets: [{
-                        data: Object.values(statusMap),
-                        backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4'],
+                        data: Object.values(chartData),
+                        backgroundColor: colors,
                         borderWidth: 0,
                         hoverOffset: 15
                     }]
@@ -330,12 +453,14 @@
                     maintainAspectRatio: false,
                     cutout: '70%',
                     plugins: {
-                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Sarabun', size: 12 } } }
+                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Sarabun', size: 11 } } }
                     }
                 }
             });
+        }
 
-            const deptMap = allData.reduce((acc, curr) => {
+        function updateBarChart(data) {
+            const deptMap = data.reduce((acc, curr) => {
                 if(curr.dept !== '-') acc[curr.dept] = (acc[curr.dept] || 0) + 1;
                 return acc;
             }, {});
@@ -351,8 +476,7 @@
                         label: 'จำนวนงาน',
                         data: sortedDept.map(d => d[1]),
                         backgroundColor: 'rgba(106, 44, 145, 0.7)',
-                        hoverBackgroundColor: 'rgba(106, 44, 145, 1)',
-                        borderRadius: 10
+                        borderRadius: 8
                     }]
                 },
                 options: {
@@ -361,9 +485,7 @@
                         y: { beginAtZero: true, grid: { display: false } },
                         x: { grid: { display: false }, ticks: { font: { family: 'Sarabun', size: 10 } } }
                     },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }
@@ -378,25 +500,27 @@
             }
             
             tbody.innerHTML = data.map(d => {
-                const isDone = String(d.status).includes('เสร็จ');
+                const planColor = d.plan.includes('คปอ.1') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100';
                 return `
-                    <tr class="border-b border-slate-50 hover:bg-indigo-50/50 transition-colors cursor-pointer group" onclick="showDetail(${d.id})">
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                         <td class="p-5 text-slate-400 font-mono text-[10px]">${d.id}</td>
-                        <td class="p-5 font-bold text-indigo-600 font-mono text-xs">${d.peaCode}</td>
-                        <td class="p-5 text-xs font-semibold text-slate-600">
-                            <span class="bg-slate-100 px-2 py-1 rounded-md border border-slate-200">${d.dept}</span>
-                        </td>
-                        <td class="p-5 font-bold text-slate-800">${d.jobTitle}</td>
-                        <td class="p-5 text-center highlight-col border-x border-indigo-100/50">${d.circuitKm}</td>
-                        <td class="p-5 text-center">
-                            <span class="status-pill inline-block shadow-sm ${isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                                ${d.status}
+                        <td class="p-5">
+                            <span class="status-pill inline-block border ${planColor}">
+                                ${d.plan}
                             </span>
                         </td>
-                        <td class="p-5 text-right">
-                            <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                                <i class="fas fa-chevron-right text-[10px]"></i>
-                            </div>
+                        <td class="p-5 text-xs font-semibold text-slate-600">${d.dept}</td>
+                        <td class="p-5 font-bold text-slate-800">${d.jobTitle}</td>
+                        <td class="p-5 text-center highlight-col border-x border-indigo-100/50">${typeof d.circuitKm === 'number' ? d.circuitKm.toFixed(2) : d.circuitKm}</td>
+                        <td class="p-5 text-center">
+                            <span class="text-[11px] text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                                ${d.jobType}
+                            </span>
+                        </td>
+                        <td class="p-5 text-center">
+                            <button onclick="showDetail(${d.id})" class="px-4 py-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-purple-600 hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -430,12 +554,17 @@
         }
 
         function applyFilters() {
+            const plan = document.getElementById('planFilter').value;
             const dept = document.getElementById('deptFilter').value;
             const q = document.getElementById('tableSearch').value.toLowerCase();
-            const filtered = allData.filter(d => {
+            
+            const baseData = getFilteredData();
+            
+            const filtered = baseData.filter(d => {
+                const matchesPlan = plan === 'all' || d.plan === plan;
                 const matchesDept = dept === 'all' || d.dept === dept;
                 const matchesSearch = Object.values(d.fullData).some(v => String(v).toLowerCase().includes(q));
-                return matchesDept && matchesSearch;
+                return matchesPlan && matchesDept && matchesSearch;
             });
             updateTable(filtered);
         }
@@ -443,12 +572,13 @@
         function showStatus(m, c) {
             const b = document.getElementById('status-bar');
             b.innerHTML = `<i class="fas fa-info-circle mr-2"></i> ${m}`; 
-            b.className = `mb-6 p-4 rounded-xl block border shadow-sm ${c} animate-bounce-short`;
+            b.className = `mb-6 p-4 rounded-xl block border shadow-sm ${c}`;
             setTimeout(() => b.classList.add('hidden'), 4000);
         }
 
         document.getElementById('tableSearch').addEventListener('input', applyFilters);
         document.getElementById('deptFilter').addEventListener('change', applyFilters);
+        document.getElementById('planFilter').addEventListener('change', applyFilters);
         window.onclick = (e) => { if(e.target == document.getElementById('detailModal')) closeModal(); }
         window.onload = fetchData;
     </script>
